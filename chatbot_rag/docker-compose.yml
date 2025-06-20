@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  # Your RAG Chatbot Application
+  app:
+    build:
+      context: .
+      dockerfile: ./aws_service/Dockerfile  # Assuming this is your app's Dockerfile
+    container_name: rag_chatbot_app
+    ports:
+      - "8000:8000"
+    environment:
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY} # Load from .env file
+      - AWS_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - ENDPOINT_URL=http://localstack:4566 # Use service name to connect
+      - S3_BUCKET_NAME=pdf-storage-bucket
+    depends_on:
+      - localstack
+    volumes:
+      - .:/app # Mounts your code for live-reloading
+
+  # Localstack Service (as you had it)
+  localstack:
+    image: localstack/localstack:3.0
+    container_name: localstack
+    ports:
+      - "4566:4566"   # Main services
+      - "4571:4571"   # Optional Web UI / debug
+    environment:
+      - SERVICES=s3,dynamodb,lambda
+      - DEBUG=1
+      - DATA_DIR=/var/lib/localstack/data
+      - LAMBDA_EXECUTOR=docker-reuse
+    volumes:
+      - localstack_data:/var/lib/localstack
+      - /var/run/docker.sock:/var/run/docker.sock
+
+volumes:
+  localstack_data:
